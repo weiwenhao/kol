@@ -2,14 +2,21 @@
   "development": {
     "username": "root",
     "password": null,
-    "database": "egg-sequelize-example-dev",
+    "database": "kol",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "test": {
     "username": "root",
     "password": null,
-    "database": "egg-sequelize-example-unittest",
+    "database": "kol",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "kol",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }
