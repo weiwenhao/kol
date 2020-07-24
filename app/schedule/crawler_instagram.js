@@ -2,10 +2,16 @@
 
 module.exports = {
   schedule: {
-    interval: '5m', // 1 分钟间隔
+    interval: '1s', // 1 分钟间隔
+    disable: isDisable,
     type: 'all', // 指定所有的 worker 都需要执行
   },
-  async task() {
-    // console.log('php 是世界上最好的语言');
+  async task(ctx) {
+    const random = Math.random();
+    const bool = true;
+    while (bool) {
+      await ctx.helper.sleep(1000);
+      console.log(random);
+    }
   },
 };

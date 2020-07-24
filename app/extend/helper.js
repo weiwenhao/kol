@@ -6,4 +6,9 @@ module.exports = {
     if (!string) return string;
     return parseInt(string) || 0;
   },
+  sleep(ms) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms);
+    });
+  },
 };

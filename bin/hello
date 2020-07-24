@@ -2,21 +2,13 @@
 'use strict';
 
 const { Command } = require('commander');
+
 const program = new Command();
-function sleep(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
-}
 
 program
   .command('run')
   .description('run setup commands for all envs')
   .action(async function() {
-    for (let index = 0; index < 100000; index++) {
-      await sleep(2000);
-      console.log('index:' + index);
-    }
   });
 
 program.parse(process.argv);
