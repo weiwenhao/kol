@@ -8,12 +8,14 @@
   },
   "dependencies": {
     "commander": "^6.0.0",
+    "dayjs": "^1.8.30",
     "egg": "^2.15.1",
+    "egg-redis": "^2.4.0",
     "egg-scripts": "^2.11.0",
     "egg-sequelize": "^5.2.2",
     "instagram-private-api": "^1.41.0",
+    "lodash": "^4.17.19",
     "mysql2": "^2.1.0",
-    "redis": "^3.0.2",
     "sequelize": "^6.3.3"
   },
   "devDependencies": {

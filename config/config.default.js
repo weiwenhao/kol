@@ -26,6 +26,5 @@ module.exports = appInfo => {
   return {
     ...config,
     ...userConfig,
-    test: 'php 是最好的语言',
   };
 };

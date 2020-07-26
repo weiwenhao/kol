@@ -6,12 +6,15 @@ const { IgApiClient } = require('instagram-private-api');
 const program = new Command();
 
 program
-  .command('email-of [username]')
+  .command('test [username]')
   .description('获取用户邮箱')
   .action(async function(username) {
     const ins = new IgApiClient();
     ins.state.generateDevice('ay1101140857@gmail.com');
     ins.state.proxyUrl = 'http://127.0.0.1:1087';
+
+    // await ins.account.login('ay1101140857@gmail.com', 'wwh520yys');
+
 
     ins.state.deserialize({
       cookies: '{"version":"tough-cookie@2.5.0","storeType":"MemoryCookieStore","rejectPublicSuffixes":true,"cookies":[{"key":"csrftoken","value":"OKJE4hg2C8TXnA5rIXwawPbTCx2K4en8","expires":"2021-07-22T07:32:38.000Z","maxAge":31449600,"domain":"instagram.com","path":"/","secure":true,"hostOnly":false,"creation":"2020-07-23T07:32:36.245Z","lastAccessed":"2020-07-23T07:32:38.524Z"},{"key":"rur","value":"VLL","domain":"instagram.com","path":"/","secure":true,"httpOnly":true,"hostOnly":false,"creation":"2020-07-23T07:32:36.247Z","lastAccessed":"2020-07-23T07:32:38.525Z"},{"key":"mid","value":"Xxk9FAABAAH6dIgpl6cHogR1mduA","expires":"2030-07-21T07:32:36.000Z","maxAge":315360000,"domain":"instagram.com","path":"/","secure":true,"hostOnly":false,"creation":"2020-07-23T07:32:36.250Z","lastAccessed":"2020-07-23T07:32:36.280Z"},{"key":"ds_user","value":"ay1101140857","expires":"2020-10-21T07:32:38.000Z","maxAge":7776000,"domain":"instagram.com","path":"/","secure":true,"httpOnly":true,"hostOnly":false,"creation":"2020-07-23T07:32:38.521Z","lastAccessed":"2020-07-23T07:32:38.521Z"},{"key":"ds_user_id","value":"9390552498","expires":"2020-10-21T07:32:38.000Z","maxAge":7776000,"domain":"instagram.com","path":"/","secure":true,"hostOnly":false,"creation":"2020-07-23T07:32:38.526Z","lastAccessed":"2020-07-23T07:32:38.526Z"},{"key":"sessionid","value":"9390552498%3AXPjXbNT0qWweuH%3A23","expires":"2021-07-23T07:32:38.000Z","maxAge":31536000,"domain":"instagram.com","path":"/","secure":true,"httpOnly":true,"hostOnly":false,"creation":"2020-07-23T07:32:38.526Z","lastAccessed":"2020-07-23T07:32:38.526Z"}]}',
@@ -49,12 +52,21 @@ program
     });
 
     const userId = await ins.user.getIdByUsername(username);
-    const user = await ins.user.info(userId);
-    if (user.public_email) {
-      console.log('email:' + user.public_email);
-    } else {
-      console.log('user not public email');
-    }
+    // const user = await ins.user.info(userId);
+
+    // const userFeed = await ins.feed.user(userId);
+
+    // const post = await userFeed.items();
+    const res = await ins.feed.mediaComments('2360476902518168260');
+    const test = await res.items();
+    console.log(test);
+    // console.log(post[0].usertags.in[0]);
+    // console.log(post[1].usertags);
+    // console.log(post[2].usertags);
+    // console.log(post[0].image_versions2.candidates); // 帖子图片
+    // console.log(post[0].caption.text); // 帖子文案
+    // console.log(post[0].location); // 发帖地址
+
   });
 
 function sleep(ms) {
