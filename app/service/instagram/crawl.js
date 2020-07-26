@@ -78,14 +78,14 @@ class CrawlService extends Service {
       }
       await ctx.helper.sleep(1000);
       const posts = await this.fetchPosts(client, instagramId);
-      let followings = [];
+      const followings = [];
 
       // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
-      const count = await ctx.model.InstagramQueue.count();
-      if (count < 1000 && user.followerCount < 10000) {
-        await ctx.helper.sleep(1000);
-        followings = await this.fetchFollowings(client, instagramId);
-      }
+      // const count = await ctx.model.InstagramQueue.count();
+      // if (count < 1000 && user.followerCount < 10000) {
+      //   await ctx.helper.sleep(1000);
+      //   followings = await this.fetchFollowings(client, instagramId);
+      // }
       app.logger.info(`[instagram] 抓取成功，insgram id: ${instagramId}, username: ${username}`);
 
       // 从 posts 中挑选出地区信息
@@ -182,9 +182,15 @@ class CrawlService extends Service {
     for (const item of originPosts) {
       let image = null;
       let hdImage = null;
+      // 单图
       if (item.image_versions2) {
         image = item.image_versions2.candidates[1].url;
         hdImage = item.image_versions2.candidates[0].url;
+      }
+      // 多图
+      if (item.carousel_media) {
+        hdImage = item.carousel_media[0].image_versions2.candidates[0].url;
+        image = item.carousel_media[0].image_versions2.candidates[1].url;
       }
 
       let country = null;

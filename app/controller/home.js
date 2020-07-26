@@ -9,10 +9,10 @@ class HomeController extends Controller {
     // const clientService = ctx.service.instagram.client;
     // const ins = await clientService.get();
     // 14583605
-    // await crawlService.fetchInfo(ins, 14583605);
+    // await crawlService.fetchPosts(ins.client, 46955788);
     crawlService.run();
 
-    ctx.body = '在抓了，在抓了';
+    // ctx.body = '在抓了，在抓了';
   }
 }
 

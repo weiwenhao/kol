@@ -3,11 +3,12 @@
 module.exports = {
   sequelize: {
     dialect: 'mysql',
-    host: '123.207.65.111',
+    // host: '123.207.65.111',
+    host: '127.0.0.1',
     port: 3306,
     database: 'kol',
     username: 'root',
-    password: 'wwh520yys',
+    // password: 'wwh520yys',
   },
   instagram: {
     accounts: [
