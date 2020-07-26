@@ -119,17 +119,13 @@ program
     });
 
     const userId = await ins.user.getIdByUsername(username);
-    const gen = await ins.feed.accountFollowing(userId);
-    const firstPage = await gen.request();
-    const users = firstPage.users;
-    console.log(username + ' 关注了这些人');
-
-    for (const user of users) {
-      await sleep(1000);
-      const following = await ins.user.info(user.pk);
-      console.log(user.username + ', 邮箱:' + following.public_email);
-
-    }
+    let res = await ins.feed.usertags(userId);
+    // const firstPage = await gen.request();
+    // const users = firstPage.users;
+    res = await res.request();
+    // console.log(res.items[0].image_versions2);
+    // console.log(res.items[0].usertags.in);
+    // console.log(res.items[0]);
   });
 
 

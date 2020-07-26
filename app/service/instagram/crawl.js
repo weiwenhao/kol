@@ -80,12 +80,17 @@ class CrawlService extends Service {
       const posts = await this.fetchPosts(client, instagramId);
       const followings = [];
 
+      // 如果客户端的 following 被封禁，则跳过, 分开 try catch
       // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
       // const count = await ctx.model.InstagramQueue.count();
       // if (count < 1000 && user.followerCount < 10000) {
       //   await ctx.helper.sleep(1000);
       //   followings = await this.fetchFollowings(client, instagramId);
       // }
+
+      // 推荐人获取 instagram queue
+
+      // web api 获取 instagram queue
       app.logger.info(`[instagram] 抓取成功，insgram id: ${instagramId}, username: ${username}`);
 
       // 从 posts 中挑选出地区信息
