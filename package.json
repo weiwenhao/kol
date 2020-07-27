@@ -14,9 +14,11 @@
     "egg-scripts": "^2.11.0",
     "egg-sequelize": "^5.2.2",
     "instagram-private-api": "^1.41.0",
+    "instagram-web-api": "^2.2.0",
     "lodash": "^4.17.19",
     "mysql2": "^2.1.0",
-    "sequelize": "^6.3.3"
+    "sequelize": "^6.3.3",
+    "tough-cookie-filestore2": "^1.0.0"
   },
   "devDependencies": {
     "autod": "^3.0.1",
