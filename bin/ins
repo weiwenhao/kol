@@ -13,7 +13,7 @@ program
   .action(async function(username) {
     const ins = new IgApiClient();
     ins.state.generateDevice('ay1101140857@gmail.com');
-    ins.state.proxyUrl = 'http://127.0.0.1:1087';
+    ins.state.proxyUrl = 'http://127.0.0.1:1085';
 
     // await ins.account.login('ay1101140857@gmail.com', 'wwh520yys');
 
@@ -54,20 +54,14 @@ program
     });
 
     const userId = await ins.user.getIdByUsername(username);
-    // const user = await ins.user.info(userId);
-
-    // const userFeed = await ins.feed.user(userId);
-
-    // const post = await userFeed.items();
-    const res = await ins.feed.mediaComments('2360476902518168260');
-    const test = await res.items();
-    console.log(test);
-    // console.log(post[0].usertags.in[0]);
-    // console.log(post[1].usertags);
-    // console.log(post[2].usertags);
-    // console.log(post[0].image_versions2.candidates); // 帖子图片
-    // console.log(post[0].caption.text); // 帖子文案
-    // console.log(post[0].location); // 发帖地址
+    const gen = await ins.feed.accountFollowing(userId);
+    const first = await gen.request();
+    console.log(first);
+    console.log(first.users.length);
+    await sleep(1000);
+    const last = await gen.request();
+    console.log(last);
+    console.log(last.users.length);
 
   });
 

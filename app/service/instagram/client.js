@@ -41,8 +41,10 @@ class ClientService extends Service {
         // 序列化登录状态
         serialized = await ins.state.serialize();
         delete serialized.constants; // this deletes the version info, so you'll always use the version provided by the library
+
+        serialized = JSON.stringify(serialized);
         // 存储到 redis
-        redis.set(key, JSON.stringify(serialized));
+        redis.set(key, serialized);
       }
 
       await ins.state.deserialize(JSON.parse(serialized));

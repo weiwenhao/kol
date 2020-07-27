@@ -34,6 +34,7 @@ class CrawlService extends Service {
         app.logger.warn(`[instagram] 暂无可用客户端,等待 ${awaitSecond} 秒后重试`);
         continue;
       }
+      app.logger.info(`[instagram] 客户端选择成功, account: ${select.username}, 抓取用户次数： ${select.count}`);
 
       // 重复抓取检查
       const { instagramId, username } = item;
@@ -48,13 +49,13 @@ class CrawlService extends Service {
       // 抓取前从队列中删除该元素,防止下一次重复采集
       await this.popQueue(username);
 
-      // await 填充 queue, 状态接口使用同步方式, 检查当前队列长度
-      // if () {
-      // sleep
-      await this.fillQueue(username);
-      // }
+      // await 单协程填充 queue,防止频率限制
+      // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
+      const count = await ctx.model.InstagramQueue.count();
+      if (count < 1000) {
+        await this.fillQueue(username);
+      }
 
-      // 同步等待模式
       this.crawlUser(instagramId, username, select);
     }
   }
@@ -74,24 +75,55 @@ class CrawlService extends Service {
   }
 
   async fillQueue(username) {
+    const { ctx } = this;
+    this.app.logger.info(`[instagram] 准备抓取 following, instagram username: ${username}`);
+
     // 如果客户端的 following 被封禁，则跳过, 分开 try catch
-    // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
-    // const count = await ctx.model.InstagramQueue.count();
 
-    // 获取用户的粉丝数量，避免大 v
-    const { client, username: account, count } = await this.webClient.get();
-    this.app.logger.info(`[instagram] web client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
-
-    // // 获取
-    const user = await client.getUserByUsername({ username });
+    // 获取重复获取客户基本信息
+    const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
+    const user = await webClient.getUserByUsername({ username });
     const followerCount = user.edge_followed_by.count;
     const instagramId = user.id;
+
     if (followerCount > 10000) {
-      this.app.logger.info(`[instagram] web client 抓取 following, 粉丝数量过多，follower count: ${followerCount}`);
+      this.app.logger.info(`[instagram] web client 粉丝数量过多，不抓取 follower，follower count: ${followerCount}`);
       return;
     }
 
-    const followers = await client.getFollowings({ userId: instagramId, first: 50 }); // 最多 50
+    // 移动 api 获取关注者
+    const { client, username: account, count } = await this.client.get();
+    this.app.logger.info(`[instagram] client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
+    const followings = await this.fetchFollowings(client, instagramId);
+
+    for (const item of followings) {
+      // 存在于已抓取对象
+      let exits = await ctx.model.User.count({
+        where: { username: item.username },
+      });
+      if (exits) {
+        continue;
+      }
+
+      // 存在于待抓取队列
+      exits = await ctx.model.InstagramQueue.count({
+        where: { username: item.username },
+      });
+      if (exits) {
+        continue;
+      }
+
+      ctx.model.InstagramQueue.create(item);
+    }
+
+    // TODO 推荐人获取
+
+    // TODO web api 获取
+  }
+
+  async fetchWebFollowings(client, instagramId) {
+    const followers = [];
+    const page = await client.getFollowings({ userId: instagramId, first: 50 }); // 最多 50
 
     const test = {
       count: 1711,
@@ -111,70 +143,38 @@ class CrawlService extends Service {
         },
       ],
     };
-    console.log(test);
-
-    // if (user.followerCount < 10000) {
-    //   await ctx.helper.sleep(1000);
-    //   // followings = await this.fetchFollowings(client, instagramId);
-    // }
-
-    // 推荐人获取 instagram queue
-
-    // web api 获取 instagram queue
-
-    // 数据存储
+    // 数据处理
+    // 等待
   }
 
   // seeder  24761205 tiaa_angeline
   async crawlUser(instagramId, username, select) {
     const { ctx, app } = this;
     const { client, username: account, count } = select;
-    app.logger.info(`[instagram] 客户端选择成功, account: ${account}, 抓取用户次数： ${count}`);
     app.logger.info(`[instagram] 抓取中，insgram id: ${instagramId}, username: ${username}`);
 
     try {
       let user = await this.fetchInfo(client, instagramId);
+      // 抓取识别跳过(私有客户会存在这种情况)
       if (!user) {
         return;
       }
+
       await ctx.helper.sleep(1000);
       const posts = await this.fetchPosts(client, instagramId);
-      const followings = [];
-
-
-      app.logger.info(`[instagram] 抓取成功，insgram id: ${instagramId}, username: ${username}`);
-
       // 从 posts 中挑选出地区信息
       user = { ...user, ...this.parseRegionBy(posts) };
+      app.logger.info(`[instagram] 抓取成功，insgram id: ${instagramId}, username: ${username}`);
 
-      // 数据插入
+      // 用户写入
       const { id: userId } = await ctx.model.User.create(user);
-      for (const item of followings) {
-        // 存在于已抓取对象
-        let exits = await ctx.model.User.count({
-          where: { username: item.username },
-        });
-        if (exits) {
-          continue;
-        }
-
-        // 存在于待抓取队列
-        exits = await ctx.model.InstagramQueue.count({
-          where: { username: item.username },
-        });
-        if (exits) {
-          continue;
-        }
-
-        ctx.model.InstagramQueue.create(item);
-      }
-
+      // 帖子写入
       for (const post of posts) {
         post.userId = userId;
         ctx.model.InstagramPost.create(post);
       }
-      app.logger.info(`[instagram] 数据写入成功，insgram id: ${instagramId}, username: ${username}`);
 
+      app.logger.info(`[instagram] 数据写入成功，insgram id: ${instagramId}, username: ${username}`);
     } catch (error) {
       // 抓取失败的放到队列尾部，等待下一次临幸
       await this.pushQueue(instagramId, username);
@@ -216,6 +216,7 @@ class CrawlService extends Service {
     };
   }
   async fetchFollowings(client, instagramId) {
+    // TODO accountFollowing  accountFollowers(粉丝)
     const gen = await client.feed.accountFollowing(instagramId);
 
     let loop = 10;
@@ -224,6 +225,7 @@ class CrawlService extends Service {
     while (loop) {
       const { users, next_max_id } = await gen.request();
 
+      this.app.logger.info(`[instagram] 抓取关注者成功, instagram id: ${instagramId}, 本次抓取数量: ${users.length}, next_max_id: ${next_max_id}`);
       // 如果数据重复，也 break, 罕见情况，需要告警支持
       const exits = followings.find(item => item.instagramId === users[0].pk);
       if (exits) {
@@ -249,7 +251,7 @@ class CrawlService extends Service {
       }
 
       // sleep 1秒,再抓下一页
-      await this.ctx.helper.sleep(2000);
+      await this.ctx.helper.sleep(1000);
       loop--;
       if (loop === 0) {
         this.app.logger.info(`[instagram] 本次抓取超过 10 次, 停止抓取, instagram id: ${instagramId}, 抓取非私人在行号数量: ${followings.length}, 私人账号数量：${privateCount}`);

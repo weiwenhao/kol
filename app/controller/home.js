@@ -11,9 +11,9 @@ class HomeController extends Controller {
     // const ins = await clientService.get();
     // 14583605
     // await crawlService.fetchFollowings(ins.client, 39011050604);
-    // crawlService.run();
+    crawlService.run();
 
-    crawlService.fillQueue('tiaa_angeline');
+    // crawlService.fillQueue('tiaa_angeline');
 
     ctx.body = '在抓了在抓了';
   }
