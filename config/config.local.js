@@ -15,12 +15,12 @@ module.exports = {
       {
         username: 'ay1101140857@gmail.com',
         password: 'wwh520yys',
-        proxy: 'http://127.0.0.1:1085',
+        proxy: 'http://127.0.0.1:1087',
       },
       {
         username: '1101140857@qq.com',
         password: 'wwh520yys',
-        proxy: 'http://127.0.0.1:1085',
+        proxy: 'http://127.0.0.1:1087',
       },
     ],
   },

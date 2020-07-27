@@ -2,6 +2,7 @@
 
 const dayjs = require('dayjs');
 const _ = require('lodash');
+const { Sequelize } = require('sequelize');
 const Service = require('egg').Service;
 
 class CrawlService extends Service {
@@ -21,13 +22,6 @@ class CrawlService extends Service {
     while (loop) {
       await ctx.helper.sleep(awaitSecond * 1000);
 
-      // 队列检查
-      const item = await ctx.model.InstagramQueue.findOne();
-      if (!item) {
-        app.logger.warn(`[instagram] instagram queue 为空,等待 ${awaitSecond} 秒后重试`);
-        continue;
-      }
-
       // 可用客户端检查
       const select = await this.client.get();
       if (!select) {
@@ -35,6 +29,20 @@ class CrawlService extends Service {
         continue;
       }
       app.logger.info(`[instagram] 客户端选择成功, account: ${select.username}, 抓取用户次数： ${select.count}`);
+
+      // await 单协程填充 queue,防止频率限制 TODO 独立进程
+      // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
+      const count = await ctx.model.InstagramQueue.count();
+      if (count < 1000) {
+        await this.fillQueue();
+      }
+
+      // 队列检查
+      const item = await ctx.model.InstagramQueue.findOne();
+      if (!item) {
+        app.logger.warn(`[instagram] instagram queue 为空,等待 ${awaitSecond} 秒后重试`);
+        continue;
+      }
 
       // 重复抓取检查
       const { instagramId, username } = item;
@@ -48,13 +56,6 @@ class CrawlService extends Service {
 
       // 抓取前从队列中删除该元素,防止下一次重复采集
       await this.popQueue(username);
-
-      // await 单协程填充 queue,防止频率限制
-      // queue 长度检查， 队列少于 1000 并且粉丝数量少于 10000 才抓取
-      const count = await ctx.model.InstagramQueue.count();
-      if (count < 1000) {
-        await this.fillQueue(username);
-      }
 
       this.crawlUser(instagramId, username, select);
     }
@@ -74,24 +75,39 @@ class CrawlService extends Service {
     });
   }
 
-  async fillQueue(username) {
+  async fillQueue() {
     const { ctx } = this;
-    this.app.logger.info(`[instagram] 准备抓取 following, instagram username: ${username}`);
-
-    // 如果客户端的 following 被封禁，则跳过, 分开 try catch
-
-    // 获取重复获取客户基本信息
-    const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
-    const user = await webClient.getUserByUsername({ username });
-    const followerCount = user.edge_followed_by.count;
-    const instagramId = user.id;
-
-    if (followerCount > 10000) {
-      this.app.logger.info(`[instagram] web client 粉丝数量过多，不抓取 follower，follower count: ${followerCount}`);
+    const Op = Sequelize.Op;
+    // 挑选 (未被抓取，并且优先选择喜欢的用户)
+    // 先从喜欢的对象入手
+    let user = await ctx.model.User.findOne({
+      where: {
+        following_at: { [Op.is]: null },
+        selected_at: { [Op.not]: null },
+      },
+    });
+    if (!user) {
+      user = await ctx.model.User.findOne({
+        where: {
+          following_at: { [Op.is]: null },
+          follower_count: {
+            [Op.gte]: 500,
+            [Op.lt]: 10000,
+          },
+        },
+      });
+    }
+    // 还是没有就放弃吧
+    if (!user) {
+      this.app.logger.warn('[instagram] 找不到可以抓取关注列表的 kol');
       return;
     }
 
-    // 移动 api 获取关注者
+    this.app.logger.info(`[instagram] 填充 queue,使用 following, username: ${user.username}`);
+
+    // 如果客户端的 following 被封禁，则跳过, 分开 try catch
+    const instagramId = user.origin.pk;
+    // // 移动 api 获取关注者
     const { client, username: account, count } = await this.client.get();
     this.app.logger.info(`[instagram] client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
     const followings = await this.fetchFollowings(client, instagramId);
@@ -115,6 +131,10 @@ class CrawlService extends Service {
 
       ctx.model.InstagramQueue.create(item);
     }
+
+    // 设置为已抓取关注者
+    user.followingAt = dayjs().valueOf();
+    await user.save();
 
     // TODO 推荐人获取
 

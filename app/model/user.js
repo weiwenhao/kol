@@ -77,6 +77,10 @@ module.exports = app => {
       type: Sequelize.DATE,
       field: 'selected_at',
     },
+    followingAt: {
+      type: Sequelize.DATE,
+      field: 'following_at',
+    },
     viewedAt: {
       type: Sequelize.DATE,
       field: 'viewed_at',
