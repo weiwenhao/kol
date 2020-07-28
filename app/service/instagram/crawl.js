@@ -103,7 +103,7 @@ class CrawlService extends Service {
       return;
     }
 
-    this.app.logger.info(`[instagram] 填充 queue,使用 following, username: ${user.username}`);
+    this.app.logger.info(`[instagram] 准备填充 queue,使用 following, username: ${user.username}`);
 
     // 如果客户端的 following 被封禁，则跳过, 分开 try catch
     const instagramId = user.origin.pk;
@@ -113,9 +113,16 @@ class CrawlService extends Service {
     // const followings = await this.fetchFollowings(client, instagramId);
 
     // web api 抓取关注者
-    const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
-    this.app.logger.info(`[instagram] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
-    const followings = await this.fetchWebFollowings(webClient, instagramId);
+    let followings = [];
+    try {
+      const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
+      this.app.logger.info(`[instagram] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
+      followings = await this.fetchWebFollowings(webClient, instagramId);
+    } catch (error) {
+      this.app.logger.warn(`[instagram] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
+      await this.ctx.helper.sleep(60 * 1000);
+      return;
+    }
 
     for (const item of followings) {
       // 存在于已抓取对象
@@ -220,7 +227,7 @@ class CrawlService extends Service {
         app.logger.warn(`[instagram] 抓取账号限制,禁用 10 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
       } else {
-        app.logger.warn(`[instagram] 未知错误, ${error}`);
+        app.logger.warn(`[instagram] 抓取 user/post 异常, ${error}`);
       }
     }
   }
