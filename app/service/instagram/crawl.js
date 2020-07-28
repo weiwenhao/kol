@@ -107,10 +107,15 @@ class CrawlService extends Service {
 
     // 如果客户端的 following 被封禁，则跳过, 分开 try catch
     const instagramId = user.origin.pk;
-    // // 移动 api 获取关注者
-    const { client, username: account, count } = await this.client.get();
-    this.app.logger.info(`[instagram] client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
-    const followings = await this.fetchFollowings(client, instagramId);
+    // 移动 api 抓取关注者
+    // const { client, username: account, count } = await this.client.get();
+    // this.app.logger.info(`[instagram] client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
+    // const followings = await this.fetchFollowings(client, instagramId);
+
+    // web api 抓取关注者
+    const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
+    this.app.logger.info(`[instagram] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
+    const followings = await this.fetchWebFollowings(webClient, instagramId);
 
     for (const item of followings) {
       // 存在于已抓取对象
@@ -137,34 +142,45 @@ class CrawlService extends Service {
     await user.save();
 
     // TODO 推荐人获取
-
-    // TODO web api 获取
   }
 
   async fetchWebFollowings(client, instagramId) {
-    const followers = [];
-    const page = await client.getFollowings({ userId: instagramId, first: 50 }); // 最多 50
+    const followings = [];
+    let loop = 20;
+    let after = null;
+    while (loop) {
+      const page = await client.getFollowings({ userId: instagramId, first: 50, after }); // 最多 50
+      after = page.page_info.end_cursor;
+      this.app.logger.info(`[instagram] 抓取关注者成功, instagram id: ${instagramId}, 本次抓取数量: ${page.data.length}, has_next_page: ${page.page_info.has_next_page}`);
 
-    const test = {
-      count: 1711,
-      page_info: {
-        has_next_page: true,
-        end_cursor: 'QVFDNTE5OVlvVS1wN21BM1ppMm1waWNxc0R3X1BkRE1BS3ZOWTl5M055c19sWUN0R0h4bDVLSDJBb1BtcGphRTVIZE1kUVpzZXJVaFRQV3B4OWJ1UV9zaQ==',
-      },
-      data: [
-        {
-          id: '53557299',
-          username: 'salberghi',
-          full_name: 'SARAH-ANN',
-          profile_pic_url: 'https://instagram.fitm1-1.fna.fbcdn.net/v/t51.2885-19/s150x150/103435812_291846895332861_3392881314468998612_n.jpg?_nc_ht=instagram.fitm1-1.fna.fbcdn.net&_nc_ohc=hMIyIKDuEJgAX8q079-&oh=c8cb396f77b37f1291106c4ff1fef4ae&oe=5F497ED7',
-          is_verified: false,
-          followed_by_viewer: false,
-          requested_by_viewer: false,
-        },
-      ],
-    };
-    // 数据处理
-    // 等待
+      // 如果数据重复，也 break, 罕见情况，需要告警支持
+      const exits = followings.find(item => item.instagramId === page.data[0].pk);
+      if (exits) {
+        this.app.logger.warn(`[instagram] 获取关注者异常，has_next_page true，但是抓取的关注着却重复了！ 抓取 id: ${instagramId}`);
+        break;
+      }
+
+      for (const user of page.data) {
+        followings.push({
+          username: user.username,
+          instagramId: user.id,
+        });
+      }
+
+      if (!page.page_info.has_next_page) {
+        this.app.logger.info(`[instagram] has_next_page = false，停止抓取关注者, instagram id: ${instagramId}, 抓取关注者数量: ${followings.length}`);
+        break;
+      }
+
+      loop--;
+      if (loop === 0) {
+        this.app.logger.info(`[instagram] 本次抓取超过 20 次, 停止抓取, instagram id: ${instagramId}, 抓取关注者数量: ${followings.length}`);
+      }
+
+      await this.ctx.helper.sleep(2000);
+    }
+
+    return followings;
   }
 
   // seeder  24761205 tiaa_angeline
@@ -204,7 +220,7 @@ class CrawlService extends Service {
         app.logger.warn(`[instagram] 抓取账号限制,禁用 10 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
       } else {
-        console.log(`[instagram] 未知错误, ${error}`);
+        app.logger.warn(`[instagram] 未知错误, ${error}`);
       }
     }
   }
@@ -212,6 +228,7 @@ class CrawlService extends Service {
   async fetchInfo(client, instagramId) {
     const user = await client.user.info(instagramId);
     if (user.is_private) {
+      this.app.logger.warn(`[instagram] username:${user.username} 私人账号跳过`);
       return false;
     }
 
@@ -249,7 +266,7 @@ class CrawlService extends Service {
       // 如果数据重复，也 break, 罕见情况，需要告警支持
       const exits = followings.find(item => item.instagramId === users[0].pk);
       if (exits) {
-        this.app.logger.warn(`[instagram] 获取关注者异常，next_max_id 不为空，但是抓取的关注着却重复了！ 抓取 id: ${instagramId}`);
+        this.app.logger.warn(`[instagram] 获取关注者异常，next_max_id 不为空，但是抓取的关注者却重复了！ 抓取 id: ${instagramId}`);
         break;
       }
 
@@ -266,7 +283,7 @@ class CrawlService extends Service {
       }
 
       if (!next_max_id) {
-        this.app.logger.info(`[instagram] next_max_id 为空，停止抓取关注者, instagram id: ${instagramId}, 抓取非私人在行号数量: ${followings.length}, 私人账号数量：${privateCount}`);
+        this.app.logger.info(`[instagram] next_max_id 为空，停止抓取关注者, instagram id: ${instagramId}, 抓取非私人关注者数量: ${followings.length}, 私人账号数量：${privateCount}`);
         break;
       }
 

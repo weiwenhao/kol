@@ -26,7 +26,7 @@ module.exports = app => {
       type: Sequelize.STRING(10000),
     },
     avatar: {
-      type: Sequelize.STRING,
+      type: Sequelize.STRING(1000),
     },
     followerCount: {
       defaultValue: 0,

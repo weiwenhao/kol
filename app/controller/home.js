@@ -8,14 +8,14 @@ class HomeController extends Controller {
     // const crawlService = ctx.service.instagram.crawl;
     // const clientService = ctx.service.instagram.client;
     // const webClientService = ctx.service.instagram.webClient;
-    // const ins = await clientService.get();
+    // const ins = await webClientService.get();
     // 14583605
-    // await crawlService.fetchFollowings(ins.client, 39011050604);
+    // const followings = await crawlService.fetchWebFollowings(ins.client, 24761205);
     // crawlService.run();
 
     // crawlService.fillQueue();
 
-    ctx.body = 'hello world';
+    ctx.body = 'hello world!';
   }
 }
 

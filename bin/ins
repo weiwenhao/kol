@@ -78,9 +78,10 @@ program
     const cookieStore = new FileCookieStore('./cookies.json');
     const client = new Instagram({ username: 'ay1101140857@gmail.com', password: 'wwh520yys', cookieStore }, { proxy: 'http://127.0.0.1:1085' });
     // await client.login();
-    const profile = await client.getProfile();
-    console.log(profile);
-    // const followers = await client.getFollowings({ userId: '24761205', first: 100 }); // 最多 50
+    const first = await client.getFollowings({ userId: '24761205', first: 5, after: null }); // 最多 50
+    console.log(first);
+    const next = await client.getFollowings({ userId: '24761205', first: 5, after: first.page_info.end_cursor }); // 最多 50
+    console.log(next);
     // console.log(followers.data.length);
   });
 
