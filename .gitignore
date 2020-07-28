@@ -12,5 +12,4 @@ run/
 *.un~
 typings/
 .nyc_output/
-/database/cookies/*
 /config/config.local.js
