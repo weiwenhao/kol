@@ -34,7 +34,7 @@
     "node": ">=10.0.0"
   },
   "scripts": {
-    "start": "egg-scripts start --daemon --port=7001 --workers=1 --title=egg-server-kol",
+    "start": "EGG_SERVER_ENV=prod egg-scripts start --daemon --port=7001 --workers=1 --title=egg-server-kol",
     "stop": "egg-scripts stop --title=egg-server-kol",
     "dev": "egg-bin dev",
     "debug": "egg-bin debug",
