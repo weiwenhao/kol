@@ -17,6 +17,18 @@ class HomeController extends Controller {
 
     ctx.body = 'hello world!';
   }
+
+  async run() {
+    const { ctx } = this;
+    const crawlService = ctx.service.instagram.crawl;
+    // const clientService = ctx.service.instagram.client;
+    // const webClientService = ctx.service.instagram.webClient;
+    // const ins = await webClientService.get();
+    // 14583605
+    // const followings = await crawlService.fetchWebFollowings(ins.client, 24761205);
+    crawlService.run();
+    ctx.body = '程序已启动';
+  }
 }
 
 module.exports = HomeController;
