@@ -3,9 +3,9 @@
 module.exports = {
   sequelize: {
     dialect: 'mysql',
-    host: '123.207.65.111',
+    host: 'cdb-cpoe5xpr.gz.tencentcdb.com',
     // host: '127.0.0.1',
-    port: 3306,
+    port: 10062,
     database: 'kol',
     username: 'root',
     password: 'wwh520yys',
