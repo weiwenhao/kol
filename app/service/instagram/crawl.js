@@ -161,6 +161,10 @@ class CrawlService extends Service {
       this.app.logger.info(`[instagram] 抓取关注者成功, instagram id: ${instagramId}, 本次抓取数量: ${page.data.length}, has_next_page: ${page.page_info.has_next_page}`);
 
       // 如果数据重复，也 break, 罕见情况，需要告警支持
+      if (page.data.length === 0) {
+        this.app.logger.warn(`[instagram] 获取关注者异常，抓取成功，但数据为 0！ 抓取 id: ${instagramId}`);
+        break;
+      }
       const exits = followings.find(item => item.instagramId === page.data[0].pk);
       if (exits) {
         this.app.logger.warn(`[instagram] 获取关注者异常，has_next_page true，但是抓取的关注着却重复了！ 抓取 id: ${instagramId}`);
