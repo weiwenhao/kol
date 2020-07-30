@@ -17,7 +17,7 @@ class CrawlService extends Service {
   async run() {
     const { ctx, app } = this;
     const loop = true;
-    const awaitSecond = 1;
+    const awaitSecond = 2;
 
     while (loop) {
       await ctx.helper.sleep(awaitSecond * 1000);
