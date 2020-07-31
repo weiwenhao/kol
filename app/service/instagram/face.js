@@ -30,6 +30,11 @@ class FaceService extends Service {
           faces_at: { [Op.is]: null }, // 未人脸识别过
           follower_count: {
             [Op.gte]: 500,
+            [Op.lt]: 50000,
+          },
+          email: {
+            [Op.not]: null,
+            [Op.ne]: '',
           },
           country: 'United States',
         },
