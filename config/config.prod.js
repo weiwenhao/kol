@@ -23,6 +23,12 @@ module.exports = {
       },
     ],
   },
+  proxy: 'http://127.0.0.1:1085',
+  faceApi: {
+    appId: '21712013',
+    apiKey: 'RfjNGxMG8VR6GoTfCpITraL9',
+    secretKey: 'vTjTPATbYtuXRjNOfZqUV5gQBV3AxGn9',
+  },
   redis: {
     client: {
       port: 6379, // Redis port
