@@ -37,7 +37,7 @@ class FaceService extends Service {
       });
 
       let url = user.avatar;
-      if (user.origin.hd_profile_pic_versions.length > 1) {
+      if (user.origin.hd_profile_pic_versions && user.origin.hd_profile_pic_versions.length > 1) {
         url = user.origin.hd_profile_pic_versions[1].url;
       }
 
