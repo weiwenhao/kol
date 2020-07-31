@@ -32,4 +32,9 @@ module.exports = {
       weakDependent: true, // this redis instance won't block app start
     },
   },
+
+  scheduleDisabled: {
+    crawlInstagram: false,
+    faceInstagram: false,
+  },
 };

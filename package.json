@@ -7,7 +7,6 @@
     "declarations": true
   },
   "dependencies": {
-    "axios": "^0.19.2",
     "baidu-aip-sdk": "^2.4.6",
     "commander": "^6.0.0",
     "dayjs": "^1.8.30",
@@ -19,6 +18,7 @@
     "instagram-web-api": "^2.2.0",
     "lodash": "^4.17.19",
     "mysql2": "^2.1.0",
+    "node-fetch": "^2.6.0",
     "sequelize": "^6.3.3",
     "tough-cookie-filestore2": "^1.0.0"
   },

@@ -15,6 +15,7 @@ class CrawlService extends Service {
     this.webClient = this.ctx.service.instagram.webClient;
   }
   async run() {
+    this.app.logger.info('[instagram] 爬虫任务启动');
     const { ctx, app } = this;
     const loop = true;
     const awaitSecond = 2;

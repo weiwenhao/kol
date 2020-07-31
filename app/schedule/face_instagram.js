@@ -5,11 +5,11 @@ module.exports = app => {
     schedule: {
       interval: '30d', // 1 分钟间隔
       immediate: true,
-      disable: app.config.scheduleDisabled.crawlInstagram,
+      disable: app.config.scheduleDisabled.faceInstagram,
       type: 'worker',
     },
     async task(ctx) {
-      ctx.service.instagram.crawl.run();
+      ctx.service.instagram.face.run();
     },
   };
 

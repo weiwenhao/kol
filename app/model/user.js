@@ -72,7 +72,23 @@ module.exports = app => {
       type: Sequelize.STRING, // 目前只有 ins
     },
 
+    age: {
+      type: Sequelize.INTEGER().UNSIGNED,
+    },
+    beauty: {
+      type: Sequelize.DECIMAL,
+    },
+    gender: {
+      type: Sequelize.STRING,
+    },
+    race: {
+      type: Sequelize.STRING,
+    },
 
+    facesAt: {
+      type: Sequelize.DATE,
+      field: 'faces_at',
+    },
     selectedAt: {
       type: Sequelize.DATE,
       field: 'selected_at',
