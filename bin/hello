@@ -2,13 +2,47 @@
 'use strict';
 
 const { Command } = require('commander');
+const AipFaceClient = require('baidu-aip-sdk').face;
+const http = require('https');
 
 const program = new Command();
 
 program
-  .command('run')
+  .command('face [url]')
   .description('run setup commands for all envs')
-  .action(async function() {
+  .action(async function(url) {
+    const appId = '21712013';
+    const apiKey = 'RfjNGxMG8VR6GoTfCpITraL9';
+    const SecretKey = 'vTjTPATbYtuXRjNOfZqUV5gQBV3AxGn9';
+    // 新建一个对象，建议只创建一个对象调用服务接口
+    const client = new AipFaceClient(appId, apiKey, SecretKey);
+
+    // 图片转 base64
+    const imageType = 'BASE64';
+
+    http.get(url, resp => {
+      resp.setEncoding('base64');
+      let image = '';
+      resp.on('data', data => { image += data; });
+      resp.on('end', async () => {
+        // return res.json({result: body, status: 'success'});
+        // 调用人脸检测
+        const result = await client.detect(image, imageType, {
+          face_field: 'age,beauty,gender,expression,race,emotion',
+        });
+        const face = result.result.face_list[0];
+        console.log('年龄：' + face.age);
+        console.log('颜值：' + face.beauty);
+        console.log('性别：' + face.gender.type);
+        console.log('面部表情：' + face.expression.type);
+        console.log('人种：' + face.race.type);
+        console.log('心情：' + face.emotion.type);
+      });
+    }).on('error', e => {
+      console.log(`Got error: ${e.message}`);
+    });
+
+
   });
 
 program.parse(process.argv);
