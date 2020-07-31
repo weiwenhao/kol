@@ -20,6 +20,8 @@ class FaceService extends Service {
     const loop = true;
     const { ctx, app } = this;
     app.logger.info('[instagram-face] 人脸识别程序启动');
+    const client = new ApiFaceClient(...Object.values(app.config.faceApi));
+    const proxyClient = new HttpsProxyAgent(app.config.proxy);
 
     while (loop) {
       const user = await ctx.model.User.findOne({
@@ -38,8 +40,8 @@ class FaceService extends Service {
       if (user.origin.hd_profile_pic_versions.length > 1) {
         url = user.origin.hd_profile_pic_versions[1].url;
       }
-      const client = new ApiFaceClient(...Object.values(app.config.faceApi));
-      const proxyClient = new HttpsProxyAgent(app.config.proxy);
+
+      // 图像转 base64
       const response = await fetch(url, {
         agent: proxyClient,
       });
