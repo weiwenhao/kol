@@ -238,6 +238,11 @@ class CrawlService extends Service {
       let user = await this.fetchInfo(client, instagramId);
       // 抓取识别跳过(私有客户会存在这种情况)
       if (!user) {
+        await ctx.model.User.create({
+          username,
+          nickname: 'private',
+        });
+        // 保存用户名防止重复抓取
         return;
       }
 
