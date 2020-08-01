@@ -148,26 +148,38 @@ class CrawlService extends Service {
       return;
     }
 
-    for (const item of followings) {
-      // 存在于已抓取对象
-      let exits = await ctx.model.User.count({
-        where: { username: item.username },
-      });
-      if (exits) {
-        continue;
-      }
-
-      // 存在于待抓取队列
-      exits = await ctx.model.InstagramQueue.count({
-        where: { username: item.username },
-      });
-      if (exits) {
-        continue;
-      }
-
-      ctx.model.InstagramQueue.create(item);
+    // _.map => username (批量查询过滤)
+    const usernames = _.map(followings, 'username');
+    // 批量插入
+    const exitUsers = await ctx.model.User.findAll({
+      attributes: [ 'id', 'username' ],
+      where: {
+        username: usernames,
+      },
+    });
+    const exitQueues = await ctx.model.InstagramQueue.findAll({
+      attributes: [ 'id', 'username' ],
+      where: {
+        username: usernames,
+      },
+    });
+    const exitUsernames = [];
+    for (const item of exitUsers) {
+      exitUsernames.push(item.username);
+    }
+    for (const item of exitQueues) {
+      exitUsernames.push(item.username);
     }
 
+    const data = [];
+    for (const item of followings) {
+      if (exitUsernames.includes(item.username)) {
+        continue;
+      }
+      data.push(item);
+    }
+
+    ctx.model.InstagramQueue.bulkCreate(data);
 
     // TODO 推荐人获取
   }
