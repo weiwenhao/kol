@@ -40,6 +40,13 @@ class FaceService extends Service {
         },
       });
 
+      // 不存在 user 则等待
+      if (!user) {
+        app.logger.warn('[instagram-face] user 已经识别完毕，等待 5 分钟后重试');
+        await this.ctx.helper.sleep(300 * 1000);
+        continue;
+      }
+
       let url = user.avatar;
       if (user.origin.hd_profile_pic_versions && user.origin.hd_profile_pic_versions.length > 1) {
         url = user.origin.hd_profile_pic_versions[1].url;
