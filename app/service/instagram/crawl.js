@@ -22,7 +22,7 @@ class CrawlService extends Service {
     const awaitSecond = 2;
 
     while (loop) {
-      // await ctx.helper.sleep(awaitSecond * 1000);
+      await ctx.helper.sleep(awaitSecond * 1000);
 
       // 可用客户端检查
       const select = await this.client.get();
