@@ -19,7 +19,7 @@ class CrawlService extends Service {
     this.app.logger.info('[instagram] 爬虫任务启动');
     const { ctx, app } = this;
     const loop = true;
-    const awaitSecond = 2;
+    const awaitSecond = 3;
 
     while (loop) {
       await ctx.helper.sleep(awaitSecond * 1000);
@@ -262,7 +262,7 @@ class CrawlService extends Service {
       const message = error.message;
       const hasWait = message.search('Please wait a few minutes before you try again');
       if (hasWait !== -1) {
-        app.logger.warn(`[instagram] 抓取账号限制,禁用 10 分钟, account: ${account}, count: ${count}`);
+        app.logger.warn(`[instagram] 抓取账号限制,禁用 1 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
       } else {
         app.logger.warn(`[instagram] 抓取 user/post 异常, ${error}`);
