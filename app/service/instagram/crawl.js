@@ -41,6 +41,7 @@ class CrawlService extends Service {
 
       // 队列检查
       const lock = await this.lockClient.lock('locks:crawl', 5000);
+      const start = dayjs().valueOf();
       app.logger.info('[instagram] redis-lock success');
       const item = await ctx.model.InstagramQueue.findOne();
       if (!item) {
@@ -56,13 +57,15 @@ class CrawlService extends Service {
       });
       if (exits) {
         await this.popQueue(username);
-        lock.unlock;
+        lock.unlock();
         continue;
       }
 
       // 抓取前从队列中删除该元素,防止下一次重复采集
       await this.popQueue(username);
-      lock.unlock;
+      const timer = dayjs().valueOf() - start;
+      lock.unlock();
+      app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
       this.crawlUser(instagramId, username, select);
     }
