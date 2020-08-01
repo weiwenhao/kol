@@ -23,7 +23,12 @@ class WebClientService extends Service {
     for (const { username, password, proxy } of accounts) {
       const cookiePath = path.resolve(process.cwd() + `/database/cookies/${username}.json`);
       const cookieStore = new FileCookieStore(cookiePath);
-      const client = new Instagram({ username, password, cookieStore }, { proxy });
+      const options = {};
+      if (this.app.config.isProxy) {
+        options.proxy = proxy;
+      }
+
+      const client = new Instagram({ username, password, cookieStore }, options);
       const profile = await client.getProfile();
       if (!profile) {
         // 登录一下

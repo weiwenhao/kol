@@ -24,6 +24,7 @@ module.exports = {
     ],
   },
   proxy: 'http://127.0.0.1:1085',
+  isProxy: false,
   faceApi: {
     appId: '21712013',
     apiKey: 'RfjNGxMG8VR6GoTfCpITraL9',

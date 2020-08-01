@@ -19,6 +19,7 @@
     "lodash": "^4.17.19",
     "mysql2": "^2.1.0",
     "node-fetch": "^2.6.0",
+    "redlock": "^4.1.0",
     "sequelize": "^6.3.3",
     "tough-cookie-filestore2": "^1.0.0"
   },

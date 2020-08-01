@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const Service = require('egg').Service;
 
-class regionService extends Service {
+class RegionService extends Service {
   constructor(ctx) {
     super(ctx);
     const dataPath = path.resolve(process.cwd() + '/database/region_data.json');
@@ -30,4 +30,4 @@ class regionService extends Service {
   }
 }
 
-module.exports = regionService;
+module.exports = RegionService;

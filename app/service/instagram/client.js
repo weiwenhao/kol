@@ -21,7 +21,7 @@ class ClientService extends Service {
 
   async init() {
     // 获取账号列表
-    const accounts = this.ctx.app.config.instagram.accounts;
+    const accounts = this.app.config.instagram.accounts;
     const { redis } = this.app;
     const pool = [];
 
@@ -30,7 +30,10 @@ class ClientService extends Service {
       const key = this.redisStateKey.replace('{username}', username);
       const ins = new IgApiClient();
       ins.state.generateDevice(username);
-      ins.state.proxyUrl = proxy;
+
+      if (this.app.config.isProxy) {
+        ins.state.proxyUrl = proxy;
+      }
 
       let serialized = await redis.get(key);
       if (!serialized) {

@@ -7,7 +7,7 @@ class HomeController extends Controller {
     const { ctx } = this;
     // const crawlService = ctx.service.instagram.crawl;
     // const clientService = ctx.service.instagram.client;
-    const faceService = ctx.service.instagram.face;
+    // const faceService = ctx.service.instagram.face;
     // const webClientService = ctx.service.instagram.webClient;
     // const ins = await webClientService.get();
     // 14583605

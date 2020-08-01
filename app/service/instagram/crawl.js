@@ -13,6 +13,7 @@ class CrawlService extends Service {
     this.client = this.ctx.service.instagram.client;
     // web client
     this.webClient = this.ctx.service.instagram.webClient;
+    this.lockClient = this.ctx.service.lock.client();
   }
   async run() {
     this.app.logger.info('[instagram] 爬虫任务启动');
@@ -39,9 +40,12 @@ class CrawlService extends Service {
       }
 
       // 队列检查
+      const lock = await this.lockClient.lock('locks:crawl', 5000);
+      app.logger.info('[instagram] redis-lock success');
       const item = await ctx.model.InstagramQueue.findOne();
       if (!item) {
         app.logger.warn(`[instagram] instagram queue 为空,等待 ${awaitSecond} 秒后重试`);
+        lock.unlock();
         continue;
       }
 
@@ -52,11 +56,13 @@ class CrawlService extends Service {
       });
       if (exits) {
         await this.popQueue(username);
+        lock.unlock;
         continue;
       }
 
       // 抓取前从队列中删除该元素,防止下一次重复采集
       await this.popQueue(username);
+      lock.unlock;
 
       this.crawlUser(instagramId, username, select);
     }
@@ -79,6 +85,7 @@ class CrawlService extends Service {
   async fillQueue() {
     const { ctx } = this;
     const Op = Sequelize.Op;
+    const lock = await this.lockClient.lock('locks:crawl', 5000);
     // 挑选 (未被抓取，并且优先选择喜欢的用户)
     // 先从喜欢的对象入手
     let user = await ctx.model.User.findOne({
@@ -100,11 +107,16 @@ class CrawlService extends Service {
     }
     // 还是没有就放弃吧
     if (!user) {
+      lock.unlock();
       this.app.logger.warn('[instagram] 找不到可以抓取关注列表的 kol');
       return;
     }
-
+    // 设置为已抓取关注者
+    user.followingAt = dayjs().valueOf();
+    await user.save();
     this.app.logger.info(`[instagram] 准备填充 queue,使用 following, username: ${user.username}`);
+    lock.unlock();
+
 
     // 如果客户端的 following 被封禁，则跳过, 分开 try catch
     const instagramId = user.origin.pk;
@@ -121,6 +133,9 @@ class CrawlService extends Service {
       followings = await this.fetchWebFollowings(webClient, instagramId);
     } catch (error) {
       this.app.logger.warn(`[instagram] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
+      user.followingAt = null;
+      // 归还队列
+      await user.save();
       await this.ctx.helper.sleep(60 * 1000);
       return;
     }
@@ -145,9 +160,6 @@ class CrawlService extends Service {
       ctx.model.InstagramQueue.create(item);
     }
 
-    // 设置为已抓取关注者
-    user.followingAt = dayjs().valueOf();
-    await user.save();
 
     // TODO 推荐人获取
   }

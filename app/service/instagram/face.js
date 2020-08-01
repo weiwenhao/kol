@@ -14,6 +14,7 @@ class FaceService extends Service {
     this.app.logger.info('[instagram-face] 人脸识别程序启动');
     this.client = new ApiFaceClient(...Object.values(this.app.config.faceApi));
     this.proxyClient = new HttpsProxyAgent(this.app.config.proxy);
+    this.lockClient = this.ctx.service.lock.client();
   }
 
   // 不能挂，双进程
@@ -23,6 +24,8 @@ class FaceService extends Service {
     const { ctx, app } = this;
 
     while (loop) {
+      const lock = await this.lockClient.lock('locks:face', 5000);
+      app.logger.info('[instagram-face] redis-lock success');
       const user = await ctx.model.User.findOne({
       // 美国
         where: {
@@ -42,10 +45,16 @@ class FaceService extends Service {
 
       // 不存在 user 则等待
       if (!user) {
-        app.logger.warn('[instagram-face] user 已经识别完毕，等待 5 分钟后重试');
+        app.logger.warn('[instagram-face] users 已经识别完毕，等待 5 分钟后再次开始');
         await this.ctx.helper.sleep(300 * 1000);
+        // 释放锁
+        lock.unlock();
         continue;
       }
+      // 更新时间并解锁
+      user.facesAt = dayjs().valueOf();
+      user.save();
+      lock.unlock();
 
       let url = user.avatar;
       if (user.origin.hd_profile_pic_versions && user.origin.hd_profile_pic_versions.length > 1) {
@@ -58,11 +67,13 @@ class FaceService extends Service {
       } catch (error) {
         this.app.logger.warn(`[instagram-face] 识别异常,等待 10 秒后重试, ${error}`);
         await this.ctx.helper.sleep(10 * 1000);
+        // 更新 faces_at = null
+        user.facesAt = null;
+        user.save();
         continue;
       }
 
-
-      user.facesAt = dayjs().valueOf();
+      // 没有识别到人脸
       if (!face) {
         await user.save();
         continue;
@@ -78,10 +89,13 @@ class FaceService extends Service {
 
   async face(url) {
     const { app } = this;
+    const options = {};
+    if (this.app.config.isProxy) {
+      options.agent = this.proxyClient;
+    }
+
     // 图像转 base64
-    const response = await fetch(url, {
-      agent: this.proxyClient,
-    });
+    const response = await fetch(url, options);
 
     const buffer = await response.buffer();
     const image = buffer.toString('base64');
