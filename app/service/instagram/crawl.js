@@ -46,14 +46,18 @@ class CrawlService extends Service {
       const item = await ctx.model.InstagramQueue.findOne();
       if (!item) {
         app.logger.warn(`[instagram] instagram queue 为空,等待 ${awaitSecond} 秒后重试`);
-        lock.unlock();
+        lock.unlock().catch(function(err) {
+          app.logger.warn(`[instagram] 锁释放异常, ${err}`);
+        });
         continue;
       }
 
       // 重复抓取检查
       const { instagramId, username } = item;
       await this.popQueue(username);
-      lock.unlock();
+      lock.unlock().catch(function(err) {
+        app.logger.warn(`[instagram] 锁释放异常, ${err}`);
+      });
       const timer = dayjs().valueOf() - start;
       app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
@@ -107,15 +111,19 @@ class CrawlService extends Service {
     }
     // 还是没有就放弃吧
     if (!user) {
-      lock.unlock();
-      this.app.logger.warn('[instagram] 找不到可以抓取关注列表的 kol');
+      lock.unlock().catch(function(err) {
+        this.app.logger.warn(`[instagram-queue] 锁释放异常, ${err}`);
+      });
+      this.app.logger.warn('[instagram-queue] 找不到可以抓取关注列表的 kol');
       return;
     }
     // 设置为已抓取关注者
     user.followingAt = dayjs().valueOf();
     await user.save();
-    this.app.logger.info(`[instagram] 准备填充 queue,使用 following, username: ${user.username}`);
-    lock.unlock();
+    this.app.logger.info(`[instagram-queue] 准备填充 queue,使用 following, username: ${user.username}`);
+    lock.unlock().catch(function(err) {
+      this.app.logger.warn(`[instagram-queue] 锁释放异常, ${err}`);
+    });
 
 
     // 如果客户端的 following 被封禁，则跳过, 分开 try catch
@@ -129,10 +137,10 @@ class CrawlService extends Service {
     let followings = [];
     try {
       const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
-      this.app.logger.info(`[instagram] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
+      this.app.logger.info(`[instagram-queue] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
       followings = await this.fetchWebFollowings(webClient, instagramId);
     } catch (error) {
-      this.app.logger.warn(`[instagram] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
+      this.app.logger.warn(`[instagram-queue] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
       user.followingAt = null;
       // 归还队列
       await user.save();

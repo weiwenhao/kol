@@ -48,13 +48,17 @@ class FaceService extends Service {
         app.logger.warn('[instagram-face] users 已经识别完毕，等待 5 分钟后再次开始');
         await this.ctx.helper.sleep(300 * 1000);
         // 释放锁
-        lock.unlock();
+        lock.unlock().catch(function(err) {
+          app.logger.warn(`[instagram-face] 锁释放异常, ${err}`);
+        });
         continue;
       }
       // 更新时间并解锁
       user.facesAt = dayjs().valueOf();
       user.save();
-      lock.unlock();
+      lock.unlock().catch(function(err) {
+        app.logger.warn(`[instagram-face] 锁释放异常, ${err}`);
+      });
 
       let url = user.avatar;
       if (user.origin.hd_profile_pic_versions && user.origin.hd_profile_pic_versions.length > 1) {
