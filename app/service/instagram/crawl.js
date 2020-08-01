@@ -40,7 +40,7 @@ class CrawlService extends Service {
       }
 
       // 队列检查
-      const lock = await this.lockClient.lock('locks:crawl', 2000);
+      const lock = await this.lockClient.lock('locks:crawl', 3000);
       const start = dayjs().valueOf();
       app.logger.info('[instagram] redis-lock success');
       const item = await ctx.model.InstagramQueue.findOne();
