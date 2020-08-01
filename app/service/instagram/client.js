@@ -69,7 +69,7 @@ class ClientService extends Service {
 
   disableClient(username) {
     const item = this.pool.find(item => item.username === username);
-    item.disabled_at = dayjs().unix() + 600;
+    item.disabled_at = dayjs().unix() + 60;
   }
 
   /**
