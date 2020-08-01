@@ -45,12 +45,12 @@ class FaceService extends Service {
 
       // 不存在 user 则等待
       if (!user) {
-        app.logger.warn('[instagram-face] users 已经识别完毕，等待 5 分钟后再次开始');
-        await this.ctx.helper.sleep(300 * 1000);
         // 释放锁
         lock.unlock().catch(function(err) {
           app.logger.warn(`[instagram-face] 锁释放异常, ${err}`);
         });
+        app.logger.warn('[instagram-face] users 已经识别完毕，等待 5 分钟后再次开始');
+        await this.ctx.helper.sleep(300 * 1000);
         continue;
       }
       // 更新时间并解锁
