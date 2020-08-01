@@ -252,7 +252,7 @@ class CrawlService extends Service {
   async fetchInfo(client, instagramId) {
     const user = await client.user.info(instagramId);
     if (user.is_private) {
-      this.app.logger.warn(`[instagram] username:${user.username} 私人账号跳过`);
+      this.app.logger.info(`[instagram] username:${user.username} 私人账号跳过`);
       return false;
     }
 
