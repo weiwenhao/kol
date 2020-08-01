@@ -239,8 +239,9 @@ class CrawlService extends Service {
       // 帖子写入
       for (const post of posts) {
         post.userId = userId;
-        ctx.model.InstagramPost.create(post);
+        // ctx.model.InstagramPost.create(post);
       }
+      ctx.model.InstagramPost.bulkCreate(posts);
 
       app.logger.info(`[instagram] 数据写入成功，insgram id: ${instagramId}, username: ${username}`);
     } catch (error) {
