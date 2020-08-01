@@ -180,6 +180,7 @@ class CrawlService extends Service {
     }
 
     ctx.model.InstagramQueue.bulkCreate(data);
+    this.app.logger.info(`[instagram-queue] 去重后写入成功数量: ${data.length}`);
 
     // TODO 推荐人获取
   }
