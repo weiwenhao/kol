@@ -52,20 +52,17 @@ class CrawlService extends Service {
 
       // 重复抓取检查
       const { instagramId, username } = item;
+      await this.popQueue(username);
+      lock.unlock();
+      const timer = dayjs().valueOf() - start;
+      app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
+
       const exits = await ctx.model.User.count({
         where: { username },
       });
       if (exits) {
-        await this.popQueue(username);
-        lock.unlock();
         continue;
       }
-
-      // 抓取前从队列中删除该元素,防止下一次重复采集
-      await this.popQueue(username);
-      const timer = dayjs().valueOf() - start;
-      lock.unlock();
-      app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
       this.crawlUser(instagramId, username, select);
     }
