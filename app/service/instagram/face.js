@@ -111,7 +111,7 @@ class FaceService extends Service {
 
 
     if (result.error_code !== 0) {
-      app.logger.info(`[instagram] 识别异常， error_code: ${result.error_code}, error_msg: ${result.error_msg}`);
+      app.logger.info(`[instagram-face] 识别异常， error_code: ${result.error_code}, error_msg: ${result.error_msg}`);
       return false;
     }
 
