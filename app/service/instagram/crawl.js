@@ -19,7 +19,7 @@ class CrawlService extends Service {
     this.app.logger.info('[instagram] 爬虫任务启动');
     const { ctx, app } = this;
     const loop = true;
-    const awaitSecond = 4;
+    const awaitSecond = this.app.config.interval;
 
     while (loop) {
       await ctx.helper.sleep(awaitSecond * 1000);
