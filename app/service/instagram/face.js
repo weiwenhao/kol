@@ -24,22 +24,21 @@ class FaceService extends Service {
     const { ctx, app } = this;
 
     while (loop) {
-      const lock = await this.lockClient.lock('locks:face', 5000);
+      const lock = await this.lockClient.lock('locks:face', 10000);
+      const start = dayjs().valueOf();
       app.logger.info('[instagram-face] redis-lock success');
       const user = await ctx.model.User.findOne({
       // 美国
         where: {
-          viewed_at: { [Op.is]: null }, // 还未查看
-          faces_at: { [Op.is]: null }, // 未人脸识别过
+          country: 'United States',
           follower_count: {
             [Op.gte]: 500,
             [Op.lt]: 20000,
           },
           email: {
-            [Op.not]: null,
             [Op.ne]: '',
           },
-          country: 'United States',
+          faces_at: { [Op.is]: null }, // 未人脸识别过
         },
       });
 
@@ -59,6 +58,8 @@ class FaceService extends Service {
       lock.unlock().catch(function(err) {
         app.logger.warn(`[instagram-face] 锁释放异常, ${err}`);
       });
+      const timer = dayjs().valueOf() - start;
+      app.logger.info(`[instagram-face] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
       let url = user.avatar;
       if (user.origin.hd_profile_pic_versions && user.origin.hd_profile_pic_versions.length > 1) {
