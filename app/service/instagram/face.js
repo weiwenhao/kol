@@ -31,10 +31,10 @@ class FaceService extends Service {
       // 美国
         where: {
           country: 'United States',
-          follower_count: {
-            [Op.gte]: 500,
-            [Op.lt]: 20000,
-          },
+          // follower_count: {
+          //   [Op.gte]: 500,
+          //   [Op.lt]: 20000,
+          // },
           email: {
             [Op.ne]: '',
           },
