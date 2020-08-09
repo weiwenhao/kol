@@ -28,6 +28,10 @@ module.exports = app => {
     avatar: {
       type: Sequelize.STRING(1000),
     },
+    awaitSelect: {
+      type: Sequelize.INTEGER().UNSIGNED,
+      field: 'await_select',
+    },
     followerCount: {
       defaultValue: 0,
       type: Sequelize.INTEGER().UNSIGNED,

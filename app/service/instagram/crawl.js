@@ -61,8 +61,15 @@ class CrawlService extends Service {
       const timer = dayjs().valueOf() - start;
       app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
-      const exits = await ctx.model.User.count({
+      let exits = await ctx.model.User.count({ // TODO 可以删除
         where: { username },
+      });
+      if (exits) {
+        continue;
+      }
+      // 检查 exist
+      exits = await ctx.model.Exist.count({
+        where: { id: username },
       });
       if (exits) {
         continue;
@@ -151,29 +158,39 @@ class CrawlService extends Service {
     // _.map => username (批量查询过滤)
     const usernames = _.map(followings, 'username');
     // 批量插入
-    const exitUsers = await ctx.model.User.findAll({
+    const existUsers = await ctx.model.User.findAll({
       attributes: [ 'id', 'username' ],
       where: {
         username: usernames,
       },
     });
-    const exitQueues = await ctx.model.InstagramQueue.findAll({
+    const existQueues = await ctx.model.InstagramQueue.findAll({
       attributes: [ 'id', 'username' ],
       where: {
         username: usernames,
       },
     });
-    const exitUsernames = [];
-    for (const item of exitUsers) {
-      exitUsernames.push(item.username);
+    const exists = await ctx.model.Exist.findAll({
+      attributes: [ 'id' ],
+      where: {
+        id: usernames,
+      },
+    });
+
+    const existUsernames = [];
+    for (const item of existUsers) {
+      existUsernames.push(item.username);
     }
-    for (const item of exitQueues) {
-      exitUsernames.push(item.username);
+    for (const item of existQueues) {
+      existUsernames.push(item.username);
+    }
+    for (const item of exists) {
+      existUsernames.push(item.id);
     }
 
     const data = [];
     for (const item of followings) {
-      if (exitUsernames.includes(item.username)) {
+      if (existUsernames.includes(item.username)) {
         continue;
       }
       data.push(item);
@@ -236,13 +253,12 @@ class CrawlService extends Service {
 
     try {
       let user = await this.fetchInfo(client, instagramId);
+      await ctx.model.Exist.create({
+        id: username,
+      });
+
       // 抓取识别跳过(私有客户会存在这种情况)
-      if (!user) {
-        await ctx.model.User.create({
-          username,
-          nickname: 'private',
-        });
-        // 保存用户名防止重复抓取
+      if (!user || !user.email) {
         return;
       }
 
@@ -267,6 +283,7 @@ class CrawlService extends Service {
       await this.pushQueue(instagramId, username);
       const message = error.message;
       const hasWait = message.search('Please wait a few minutes before you try again');
+      // TODO 账号验证处理
       if (hasWait !== -1) {
         app.logger.warn(`[instagram] 抓取账号限制,禁用 1 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
@@ -287,10 +304,26 @@ class CrawlService extends Service {
     if (user.hd_profile_pic_versions && user.hd_profile_pic_versions[0]) {
       avatar = user.hd_profile_pic_versions[0].url;
     }
+    let email = null;
+    if (user.public_email) {
+      email = user.public_email;
+    }
+
+    if (!email) {
+      this.app.logger.info(`[instagram] username:${user.username}, 没有匹配到邮箱: ${email} .`);
+      const matchs = user.biography.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
+      console.log(matchs);
+      if (matchs && matchs.length > 0) {
+        email = matchs[0];
+        this.app.logger.info(`[instagram] username:${user.username}, 从个人信息匹配出邮箱: ${email} `);
+      }
+    }
+
+
     return {
       username: user.username,
       nickname: user.full_name,
-      email: user.public_email,
+      email,
       phoneNumber: user.public_phone_number,
       description: user.biography,
       avatar,

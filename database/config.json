@@ -1,9 +1,10 @@
 {
   "development": {
     "username": "root",
-    "password": null,
+    "password": "wwh520yys",
     "database": "kol",
-    "host": "127.0.0.1",
+    "port": 10062,
+    "host": "cdb-cpoe5xpr.gz.tencentcdb.com",
     "dialect": "mysql"
   },
   "test": {

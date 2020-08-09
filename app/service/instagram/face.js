@@ -11,7 +11,6 @@ class FaceService extends Service {
   constructor(ctx) {
     super(ctx);
 
-    this.app.logger.info('[instagram-face] 人脸识别程序启动');
     this.client = new ApiFaceClient(...Object.values(this.app.config.faceApi));
     this.proxyClient = new HttpsProxyAgent(this.app.config.proxy);
     this.lockClient = this.ctx.service.lock.client();
@@ -24,17 +23,13 @@ class FaceService extends Service {
     const { ctx, app } = this;
 
     while (loop) {
-      const lock = await this.lockClient.lock('locks:face', 10000);
+      const lock = await this.lockClient.lock('locks:face', 5000);
       const start = dayjs().valueOf();
       app.logger.info('[instagram-face] redis-lock success');
       const user = await ctx.model.User.findOne({
       // 美国
         where: {
           country: 'United States',
-          // follower_count: {
-          //   [Op.gte]: 500,
-          //   [Op.lt]: 20000,
-          // },
           email: {
             [Op.ne]: '',
           },
@@ -54,7 +49,7 @@ class FaceService extends Service {
       }
       // 更新时间并解锁
       user.facesAt = dayjs().valueOf();
-      user.save();
+      await user.save();
       lock.unlock().catch(function(err) {
         app.logger.warn(`[instagram-face] 锁释放异常, ${err}`);
       });
@@ -74,9 +69,11 @@ class FaceService extends Service {
         await this.ctx.helper.sleep(10 * 1000);
         // 更新 faces_at = null
         user.facesAt = null;
-        user.save();
+        await user.save();
         continue;
       }
+
+      user.awaitSelect = 0; // 默认标记为垃圾用户
 
       // 没有识别到人脸
       if (!face) {
@@ -88,6 +85,14 @@ class FaceService extends Service {
       user.beauty = face.beauty;
       user.gender = face.gender;
       user.race = face.race;
+
+      console.log(user.followerCount);
+      if (user.gender === 'female' && user.followerCount > 500 && user.followerCount < 20000) {
+        this.app.logger.info(`[instagram-face] 优质用户, username: ${user.username}`);
+        user.awaitSelect = 1;
+      }
+
+
       await user.save();
     }
   }
