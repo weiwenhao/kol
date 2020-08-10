@@ -158,12 +158,12 @@ class CrawlService extends Service {
     // _.map => username (批量查询过滤)
     const usernames = _.map(followings, 'username');
     // 批量插入
-    const existUsers = await ctx.model.User.findAll({
-      attributes: [ 'id', 'username' ],
-      where: {
-        username: usernames,
-      },
-    });
+    // const existUsers = await ctx.model.User.findAll({
+    //   attributes: [ 'id', 'username' ],
+    //   where: {
+    //     username: usernames,
+    //   },
+    // });
     const existQueues = await ctx.model.InstagramQueue.findAll({
       attributes: [ 'id', 'username' ],
       where: {
@@ -178,9 +178,9 @@ class CrawlService extends Service {
     });
 
     const existUsernames = [];
-    for (const item of existUsers) {
-      existUsernames.push(item.username);
-    }
+    // for (const item of existUsers) {
+    //   existUsernames.push(item.username);
+    // }
     for (const item of existQueues) {
       existUsernames.push(item.username);
     }

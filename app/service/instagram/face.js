@@ -30,9 +30,6 @@ class FaceService extends Service {
       // 美国
         where: {
           country: 'United States',
-          email: {
-            [Op.ne]: '',
-          },
           faces_at: { [Op.is]: null }, // 未人脸识别过
         },
       });
