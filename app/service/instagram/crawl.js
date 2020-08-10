@@ -61,14 +61,8 @@ class CrawlService extends Service {
       const timer = dayjs().valueOf() - start;
       app.logger.info(`[instagram] redis-unlock-lock success, 锁定时长: ${timer}ms`);
 
-      let exits = await ctx.model.User.count({ // TODO 可以删除
-        where: { username },
-      });
-      if (exits) {
-        continue;
-      }
       // 检查 exist
-      exits = await ctx.model.Exist.count({
+      const exits = await ctx.model.Exist.count({
         where: { id: username },
       });
       if (exits) {
@@ -310,15 +304,17 @@ class CrawlService extends Service {
     }
 
     if (!email) {
-      this.app.logger.info(`[instagram] username:${user.username}, 没有匹配到邮箱: ${email} .`);
       const matchs = user.biography.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
-      console.log(matchs);
       if (matchs && matchs.length > 0) {
         email = matchs[0];
         this.app.logger.info(`[instagram] username:${user.username}, 从个人信息匹配出邮箱: ${email} `);
       }
     }
 
+    if (!email) {
+      this.app.logger.info(`[instagram] username:${user.username} 无邮箱跳过`);
+      return false;
+    }
 
     return {
       username: user.username,
