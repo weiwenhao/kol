@@ -141,10 +141,20 @@ class CrawlService extends Service {
       this.app.logger.info(`[instagram-queue] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
       followings = await this.fetchWebFollowings(webClient, instagramId);
     } catch (error) {
-      this.app.logger.warn(`[instagram-queue] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
-      user.followingAt = null;
-      // 归还队列
-      await user.save();
+      const message = error.message;
+      const userError = message.search("Cannot read property 'edge_follow' of null");
+      if (userError !== -1) {
+        this.app.logger.warn(`[instagram-queue] 用户可能已经注销，无法获取关注者,跳过该用户, username: ${user.origin.username}, 主进程等待一分钟后重试`);
+      } else {
+
+        this.app.logger.warn(`[instagram-queue] 抓取 following 异常,主进程等待一分钟后重试, ${error}`);
+
+        // 归还队列
+        user.followingAt = null;
+        await user.save();
+      }
+
+
       await this.ctx.helper.sleep(60 * 1000);
       return;
     }
