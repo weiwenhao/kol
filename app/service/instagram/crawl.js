@@ -13,7 +13,12 @@ class CrawlService extends Service {
     this.client = this.ctx.service.instagram.client;
     // web client
     this.webClient = this.ctx.service.instagram.webClient;
+
     this.lockClient = this.ctx.service.lock.client();
+
+    this.dingding = this.ctx.service.dingding;
+
+    this.mainSleep = 0;
   }
   async run() {
     this.app.logger.info('[instagram] 爬虫任务启动');
@@ -22,6 +27,11 @@ class CrawlService extends Service {
     const awaitSecond = this.app.config.interval;
 
     while (loop) {
+      if (this.mainSleep !== 0) {
+        await ctx.helper.sleep(this.mainSleep);
+        this.mainSleep = 0; // 重置
+      }
+
       await ctx.helper.sleep(awaitSecond * 1000);
 
       // 可用客户端检查
@@ -287,13 +297,28 @@ class CrawlService extends Service {
       await this.pushQueue(instagramId, username);
       const message = error.message;
       const hasWait = message.search('Please wait a few minutes before you try again');
-      // TODO 账号验证处理
+      const accountException = message.search('challenge_required');
+      // 抓取频率过高
       if (hasWait !== -1) {
-        app.logger.warn(`[instagram] 抓取账号限制,禁用 1 分钟, account: ${account}, count: ${count}`);
+        app.logger.warn(`[instagram] 频率过高，账号限制,禁用 1 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
-      } else {
-        app.logger.warn(`[instagram] 抓取 user/post 异常, ${error}`);
+        return;
       }
+
+      // 账号被封， 等待 20 分钟
+      if (accountException !== -1) {
+        app.logger.warn(`[instagram] 账号限制，需要手动认证 account: ${account}, count: ${count}, 等待 10 分钟后重试`);
+
+        // 钉钉通知处理
+        this.dingding.send(`[instagram] 账号限制，需要手动解封,username: ${account}`);
+
+        // 主进程等待 10 分钟
+        this.mainSleep = 10 * 60 * 1000;
+
+        return;
+      }
+
+      app.logger.warn(`[instagram] 抓取 user/post 未知异常, ${error}`);
     }
   }
 

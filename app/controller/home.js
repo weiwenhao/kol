@@ -9,6 +9,8 @@ class HomeController extends Controller {
     // const clientService = ctx.service.instagram.client;
     // const faceService = ctx.service.instagram.face;
     // const webClientService = ctx.service.instagram.webClient;
+    // const dingdingService = ctx.service.dingding;
+    // dingdingService.send('[instagram] 账号异常，需要解封或者重试修改密码，username: 1101140857@qq.com');
     // const ins = await webClientService.get();
     // 14583605
     // const followings = await crawlService.fetchWebFollowings(ins.client, 24761205);
@@ -18,18 +20,6 @@ class HomeController extends Controller {
     // faceService.run();
 
     ctx.body = 'hello world!';
-  }
-
-  async run() {
-    const { ctx } = this;
-    const crawlService = ctx.service.instagram.crawl;
-    // const clientService = ctx.service.instagram.client;
-    // const webClientService = ctx.service.instagram.webClient;
-    // const ins = await webClientService.get();
-    // 14583605
-    // const followings = await crawlService.fetchWebFollowings(ins.client, 24761205);
-    crawlService.run();
-    ctx.body = '程序已启动';
   }
 }
 
