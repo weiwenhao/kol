@@ -293,7 +293,6 @@ class CrawlService extends Service {
       ctx.model.InstagramPost.bulkCreate(posts);
 
       app.logger.info(`[instagram] 数据写入成功，insgram id: ${instagramId}, username: ${username}`);
-      throw new Error('challenge_required');
     } catch (error) {
       // 抓取失败的放到队列尾部，等待下一次临幸
       await this.pushQueue(instagramId, username);
