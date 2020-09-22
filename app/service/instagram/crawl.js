@@ -148,9 +148,13 @@ class CrawlService extends Service {
     // web api 抓取关注者
     let followings = [];
     try {
-      const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
-      this.app.logger.info(`[instagram-queue] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
-      followings = await this.fetchWebFollowings(webClient, instagramId);
+      // const { client: webClient, username: webAccount, count: webCount } = await this.webClient.get();
+      // this.app.logger.info(`[instagram-queue] web client 抓取 following, account: ${webAccount}, 抓取用户次数： ${webCount}`);
+      // followings = await this.fetchWebFollowings(webClient, instagramId);
+
+      const { client, username: account, count } = await this.client.get();
+      this.app.logger.info(`[instagram] client 抓取 following, account: ${account}, 抓取用户次数： ${count}`);
+      followings = await this.fetchFollowings(client, instagramId);
     } catch (error) {
       const message = error.message;
       const userError = message.search("Cannot read property 'edge_follow' of null");
@@ -301,7 +305,7 @@ class CrawlService extends Service {
       const accountException = message.search('challenge_required');
       // 抓取频率过高
       if (hasWait !== -1) {
-        app.logger.warn(`[instagram] 频率过高，账号限制,禁用 1 分钟, account: ${account}, count: ${count}`);
+        app.logger.warn(`[instagram] 频率过高，账号限制,禁用 10 分钟, account: ${account}, count: ${count}`);
         await this.client.disableClient(account);
         return;
       }
@@ -404,7 +408,7 @@ class CrawlService extends Service {
       }
 
       // sleep 1秒,再抓下一页
-      await this.ctx.helper.sleep(1000);
+      await this.ctx.helper.sleep(2000);
       loop--;
       if (loop === 0) {
         this.app.logger.info(`[instagram] 本次抓取超过 10 次, 停止抓取, instagram id: ${instagramId}, 抓取非私人在行号数量: ${followings.length}, 私人账号数量：${privateCount}`);
